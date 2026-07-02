@@ -241,15 +241,27 @@
     settingsDialog.close();
   });
 
-  // Search: treat input as URL if it looks like one, otherwise Google search.
+  // Search: treat input as URL if it looks like one, otherwise search using the
+  // browser's configured default search engine (chrome.search), falling back to
+  // Google when that API is unavailable (e.g. opened outside the extension).
+  const hasSearchApi =
+    typeof chrome !== "undefined" && chrome.search && chrome.search.query;
+
   searchForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const q = searchInput.value.trim();
     if (!q) return;
-    const looksLikeUrl = /^https?:\/\//i.test(q) || /^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(q);
-    window.location.href = looksLikeUrl
-      ? normalizeUrl(q)
-      : `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+    const looksLikeUrl =
+      /^https?:\/\//i.test(q) || /^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(q);
+    if (looksLikeUrl) {
+      window.location.href = normalizeUrl(q);
+      return;
+    }
+    if (hasSearchApi) {
+      chrome.search.query({ text: q, disposition: "CURRENT_TAB" });
+      return;
+    }
+    window.location.href = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
   });
 
   async function persist() {
