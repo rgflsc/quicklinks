@@ -250,35 +250,12 @@
     return tile;
   }
 
-  function makeAddTile(sectionId, subsectionId) {
-    const tile = document.createElement("button");
-    tile.className = "tile add";
-    tile.title = tr("addShortcut");
-    const thumb = document.createElement("div");
-    thumb.className = "tile-thumb";
-    const plus = document.createElement("span");
-    plus.className = "plus";
-    plus.textContent = "+";
-    thumb.appendChild(plus);
-    const title = document.createElement("span");
-    title.className = "tile-title";
-    title.textContent = tr("addShortcut");
-    tile.append(thumb, title);
-    tile.addEventListener("click", () =>
-      openShortcutDialog(sectionId, subsectionId, null)
-    );
-    return tile;
-  }
-
   function makeGrid(container, sectionId, subsectionId) {
     const grid = document.createElement("div");
     grid.className = "grid";
     container.shortcuts.forEach((s) =>
       grid.appendChild(makeTile(s, sectionId, subsectionId))
     );
-    if (container.shortcuts.length < MAX) {
-      grid.appendChild(makeAddTile(sectionId, subsectionId));
-    }
     return grid;
   }
 
