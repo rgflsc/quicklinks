@@ -8,7 +8,6 @@ const MAX_PER_SECTION = 10;
 
 const DEFAULT_SETTINGS = {
   theme: "night",
-  columns: 6,
   showTitles: true,
   searchEngine: "default",
 };

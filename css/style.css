@@ -140,9 +140,8 @@ main {
 
 #sections {
   width: 100%;
-  max-width: calc(
-    var(--columns, 6) * var(--tile-size) + (var(--columns, 6) - 1) * var(--tile-gap)
-  );
+  /* Fit up to the section cap (10 shortcuts) per row; wraps on narrower widths. */
+  max-width: calc(10 * var(--tile-size) + 9 * var(--tile-gap));
   display: flex;
   flex-direction: column;
   gap: 28px;
@@ -235,7 +234,7 @@ main {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(var(--columns, 6), var(--tile-size));
+  grid-template-columns: repeat(auto-fill, var(--tile-size));
   gap: var(--tile-gap);
   align-content: flex-start;
 }
