@@ -40,6 +40,7 @@
   const dialogTitle = document.getElementById("dialog-title");
   const fieldTitle = document.getElementById("field-title");
   const fieldUrl = document.getElementById("field-url");
+  const fieldIcon = document.getElementById("field-icon");
   const dialogDelete = document.getElementById("dialog-delete");
   const dialogCancel = document.getElementById("dialog-cancel");
 
@@ -69,18 +70,69 @@
   function normalizeUrl(raw) {
     const value = raw.trim();
     if (!value) return "";
-    if (/^https?:\/\//i.test(value)) return value;
-    if (/^[\w.-]+\.[a-z]{2,}(\/|$|:)/i.test(value)) return `https://${value}`;
-    return value;
+    if (/^[a-z][\w+.-]*:\/\//i.test(value)) return value; // already has a scheme
+    const isHostLike =
+      /^([\w-]+\.)+[a-z]{2,}(:\d+)?([/?#]|$)/i.test(value) || // domain[:port]
+      /^localhost(:\d+)?([/?#]|$)/i.test(value) || // localhost[:port]
+      /^\d{1,3}(\.\d{1,3}){3}(:\d+)?([/?#]|$)/.test(value); // IPv4[:port]
+    if (!isHostLike) return value;
+    const isLocal =
+      /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/i.test(value);
+    return `${isLocal ? "http" : "https"}://${value}`;
   }
 
-  function faviconUrl(url) {
+  function isLocalHost(host) {
+    return (
+      host === "localhost" ||
+      !host.includes(".") ||
+      /^127\./.test(host) ||
+      /^10\./.test(host) ||
+      /^192\.168\./.test(host) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+    );
+  }
+
+  // Ordered list of icon sources to try for a shortcut. Local/intranet hosts
+  // aren't reachable by Google's favicon service (it would return a generic
+  // globe), so we read their own /favicon.ico directly first.
+  function iconCandidates(url) {
     try {
-      const host = new URL(url).hostname;
-      return `https://www.google.com/s2/favicons?domain=${host}&sz=64`;
+      const u = new URL(url);
+      const { origin, hostname } = u;
+      if (isLocalHost(hostname)) {
+        return [`${origin}/favicon.ico`, `${origin}/favicon.png`];
+      }
+      return [
+        `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`,
+        `${origin}/favicon.ico`,
+      ];
     } catch {
-      return "";
+      return [];
     }
+  }
+
+  function attachIcon(thumb, shortcut) {
+    const candidates = [];
+    if (shortcut.icon) candidates.push(shortcut.icon);
+    candidates.push(...iconCandidates(shortcut.url));
+    if (!candidates.length) {
+      thumb.appendChild(letterNode(shortcut.title));
+      return;
+    }
+    let i = 0;
+    const img = document.createElement("img");
+    img.alt = "";
+    img.addEventListener("error", () => {
+      i += 1;
+      if (i < candidates.length) {
+        img.src = candidates[i];
+      } else {
+        thumb.innerHTML = "";
+        thumb.appendChild(letterNode(shortcut.title));
+      }
+    });
+    img.src = candidates[0];
+    thumb.appendChild(img);
   }
 
   function applyLanguage() {
@@ -137,19 +189,7 @@
 
     const thumb = document.createElement("div");
     thumb.className = "tile-thumb";
-    const icon = faviconUrl(shortcut.url);
-    if (icon) {
-      const img = document.createElement("img");
-      img.src = icon;
-      img.alt = "";
-      img.addEventListener("error", () => {
-        thumb.innerHTML = "";
-        thumb.appendChild(letterNode(shortcut.title));
-      });
-      thumb.appendChild(img);
-    } else {
-      thumb.appendChild(letterNode(shortcut.title));
-    }
+    attachIcon(thumb, shortcut);
 
     const edit = document.createElement("button");
     edit.className = "tile-edit";
@@ -329,6 +369,7 @@
     dialogTitle.textContent = shortcut ? tr("editShortcut") : tr("addShortcut");
     fieldTitle.value = shortcut ? shortcut.title : "";
     fieldUrl.value = shortcut ? shortcut.url : "";
+    fieldIcon.value = shortcut ? shortcut.icon || "" : "";
     dialogDelete.hidden = !shortcut;
     shortcutDialog.showModal();
     fieldTitle.focus();
@@ -340,19 +381,21 @@
     if (!section) return;
     const title = fieldTitle.value.trim();
     const url = normalizeUrl(fieldUrl.value);
+    const icon = normalizeUrl(fieldIcon.value);
     if (!title || !url) return;
     if (scCtx.shortcutId) {
       const item = section.shortcuts.find((s) => s.id === scCtx.shortcutId);
       if (item) {
         item.title = title;
         item.url = url;
+        item.icon = icon;
       }
     } else {
       if (section.shortcuts.length >= MAX) {
         alert(tr("maxShortcuts", { max: MAX }));
         return;
       }
-      section.shortcuts.push({ id: uid("s"), title, url });
+      section.shortcuts.push({ id: uid("s"), title, url, icon });
     }
     await persist();
     render();

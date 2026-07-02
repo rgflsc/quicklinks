@@ -37,6 +37,7 @@ function normalizeShortcut(s) {
     id: s && s.id ? String(s.id) : `s_${Math.random().toString(36).slice(2, 9)}`,
     title: s && typeof s.title === "string" ? s.title : "",
     url: s && typeof s.url === "string" ? s.url : "",
+    icon: s && typeof s.icon === "string" ? s.icon : "",
   };
 }
 

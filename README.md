@@ -8,7 +8,7 @@ visual shortcuts.
 - **Custom new tab** — overrides `chrome://newtab` with sections of shortcut tiles.
 - **Sections** — create, rename, delete, and collapse/expand sections; each holds up to 10 shortcuts.
 - **Add / edit / delete** shortcuts, each with a name and URL.
-- **Favicons** automatically fetched per site, with a letter fallback.
+- **Favicons** automatically fetched per site (including localhost/intranet via their own `/favicon.ico`), with an optional custom icon URL per shortcut and a letter fallback.
 - **Drag to reorder** tiles.
 - **Search bar** — types that look like URLs open directly; anything else runs a search. The chosen engine's icon is shown inside the bar so you know where you're searching.
 - **Search engine picker** — choose Browser default (uses `chrome.search`) or Google/Bing/DuckDuckGo/Yahoo/Ecosia/Brave.
