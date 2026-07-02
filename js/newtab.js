@@ -41,6 +41,8 @@
   const fieldTitle = document.getElementById("field-title");
   const fieldUrl = document.getElementById("field-url");
   const fieldIcon = document.getElementById("field-icon");
+  const fieldLocation = document.getElementById("field-location");
+  const fieldLocationLabel = document.getElementById("field-location-label");
   const dialogDelete = document.getElementById("dialog-delete");
   const dialogCancel = document.getElementById("dialog-cancel");
 
@@ -526,6 +528,32 @@
   sectionCancel.addEventListener("click", () => sectionDialog.close());
   addSectionBtn.addEventListener("click", () => openSectionDialog(null, null));
 
+  function locationValue(sectionId, subsectionId) {
+    return subsectionId ? `${sectionId}::${subsectionId}` : sectionId;
+  }
+
+  function parseLocation(value) {
+    const [secId, subId] = String(value || "").split("::");
+    return { sectionId: secId, subsectionId: subId || null };
+  }
+
+  function populateLocations(selectedValue) {
+    fieldLocation.innerHTML = "";
+    state.sections.forEach((sec) => {
+      const opt = document.createElement("option");
+      opt.value = sec.id;
+      opt.textContent = sec.title;
+      fieldLocation.appendChild(opt);
+      (sec.subsections || []).forEach((sub) => {
+        const o = document.createElement("option");
+        o.value = `${sec.id}::${sub.id}`;
+        o.textContent = `${sec.title} \u203a ${sub.title}`;
+        fieldLocation.appendChild(o);
+      });
+    });
+    fieldLocation.value = selectedValue;
+  }
+
   // Shortcut dialog
   function openShortcutDialog(sectionId, subsectionId, shortcut) {
     scCtx = {
@@ -537,6 +565,9 @@
     fieldTitle.value = shortcut ? shortcut.title : "";
     fieldUrl.value = shortcut ? shortcut.url : "";
     fieldIcon.value = shortcut ? shortcut.icon || "" : "";
+    // The location selector only makes sense when editing an existing shortcut.
+    fieldLocationLabel.hidden = !shortcut;
+    if (shortcut) populateLocations(locationValue(sectionId, subsectionId || null));
     dialogDelete.hidden = !shortcut;
     shortcutDialog.showModal();
     fieldTitle.focus();
@@ -552,10 +583,23 @@
     if (!title || !url) return;
     if (scCtx.shortcutId) {
       const item = container.shortcuts.find((s) => s.id === scCtx.shortcutId);
-      if (item) {
-        item.title = title;
-        item.url = url;
-        item.icon = icon;
+      if (!item) return;
+      item.title = title;
+      item.url = url;
+      item.icon = icon;
+      const dest = parseLocation(fieldLocation.value);
+      const moved =
+        dest.sectionId !== scCtx.sectionId ||
+        dest.subsectionId !== scCtx.subsectionId;
+      if (moved) {
+        const target = findContainer(dest.sectionId, dest.subsectionId);
+        if (!target) return;
+        if (target.shortcuts.length >= MAX) {
+          alert(tr("maxShortcuts", { max: MAX }));
+          return;
+        }
+        container.shortcuts = container.shortcuts.filter((s) => s.id !== item.id);
+        target.shortcuts.push(item);
       }
     } else {
       if (container.shortcuts.length >= MAX) {
