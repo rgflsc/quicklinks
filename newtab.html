@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Tab</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <form id="search-form" class="search" autocomplete="off">
+      <input
+        id="search-input"
+        type="text"
+        placeholder="Search the web or enter an address"
+        aria-label="Search"
+      />
+    </form>
+    <button id="settings-btn" class="icon-btn" title="Settings" aria-label="Settings">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path fill="currentColor" d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Zm7.4-3.5a7.6 7.6 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7.3 7.3 0 0 0-1.7-1l-.4-2.5H9.2l-.4 2.5a7.3 7.3 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1c.5.4 1.1.7 1.7 1l.4 2.5h5.6l.4-2.5c.6-.3 1.2-.6 1.7-1l2.4 1 2-3.4-2-1.6c.1-.3.1-.7.1-1Z"/>
+      </svg>
+    </button>
+  </header>
+
+  <main>
+    <section id="grid" class="grid" aria-label="Shortcuts"></section>
+  </main>
+
+  <!-- Shortcut add/edit dialog -->
+  <dialog id="shortcut-dialog">
+    <form method="dialog" id="shortcut-form">
+      <h2 id="dialog-title">Add shortcut</h2>
+      <label>
+        Name
+        <input id="field-title" type="text" placeholder="Example" required maxlength="60" />
+      </label>
+      <label>
+        URL
+        <input id="field-url" type="text" placeholder="https://example.com" required />
+      </label>
+      <div class="dialog-actions">
+        <button type="button" id="dialog-delete" class="btn btn-danger" hidden>Delete</button>
+        <span class="spacer"></span>
+        <button type="button" id="dialog-cancel" class="btn">Cancel</button>
+        <button type="submit" id="dialog-save" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Settings dialog -->
+  <dialog id="settings-dialog">
+    <form method="dialog" id="settings-form">
+      <h2>Settings</h2>
+      <label>
+        Background color
+        <input id="field-bg-color" type="color" value="#1a1a2e" />
+      </label>
+      <label>
+        Background image URL (optional)
+        <input id="field-bg-image" type="text" placeholder="https://..." />
+      </label>
+      <label>
+        Columns
+        <input id="field-columns" type="number" min="3" max="10" value="6" />
+      </label>
+      <label class="checkbox">
+        <input id="field-show-titles" type="checkbox" checked />
+        Show titles under tiles
+      </label>
+      <div class="dialog-actions">
+        <button type="button" id="settings-reset" class="btn btn-danger">Reset all</button>
+        <span class="spacer"></span>
+        <button type="button" id="settings-cancel" class="btn">Close</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/storage.js"></script>
+  <script src="js/newtab.js"></script>
+</body>
+</html>
