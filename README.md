@@ -1,13 +1,11 @@
 # QuickLinks
 
 A Chrome extension that replaces the new tab page with a customizable grid of
-visual shortcuts (a "speed dial"). Inspired by the
-[Speed Dial](https://chromewebstore.google.com/detail/speed-dial/ejbjamhkdedinncaeiackcdehpccoejm)
-extension.
+visual shortcuts.
 
 ## Features
 
-- **Speed dial new tab** — overrides `chrome://newtab` with a grid of shortcut tiles.
+- **Custom new tab** — overrides `chrome://newtab` with a grid of shortcut tiles.
 - **Add / edit / delete** shortcuts, each with a name and URL.
 - **Favicons** automatically fetched per site, with a letter fallback.
 - **Drag to reorder** tiles.
