@@ -92,20 +92,40 @@
     );
   }
 
+  // The browser's own favicon store (needs the "favicon" permission). It knows
+  // the real icon of any page you've visited — including localhost/intranet
+  // apps whose icon lives at a non-standard path (e.g. Superset). Falls back to
+  // a generic globe for pages it has never seen.
+  function faviconApiUrl(url) {
+    try {
+      if (typeof chrome === "undefined" || !chrome.runtime || !chrome.runtime.getURL) {
+        return null;
+      }
+      return chrome.runtime.getURL(
+        `/_favicon/?pageUrl=${encodeURIComponent(url)}&size=64`
+      );
+    } catch {
+      return null;
+    }
+  }
+
   // Ordered list of icon sources to try for a shortcut. Local/intranet hosts
   // aren't reachable by Google's favicon service (it would return a generic
-  // globe), so we read their own /favicon.ico directly first.
+  // globe), so we read their own /favicon.ico directly and rely on the
+  // browser's favicon store for non-standard icon paths.
   function iconCandidates(url) {
     try {
       const u = new URL(url);
       const { origin, hostname } = u;
+      const api = faviconApiUrl(url);
       if (isLocalHost(hostname)) {
-        return [`${origin}/favicon.ico`, `${origin}/favicon.png`];
+        return [`${origin}/favicon.ico`, `${origin}/favicon.png`, api].filter(Boolean);
       }
       return [
         `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`,
         `${origin}/favicon.ico`,
-      ];
+        api,
+      ].filter(Boolean);
     } catch {
       return [];
     }
@@ -114,7 +134,7 @@
   function attachIcon(thumb, shortcut) {
     const candidates = [];
     if (shortcut.icon) candidates.push(shortcut.icon);
-    candidates.push(...iconCandidates(shortcut.url));
+    candidates.push(...iconCandidates(normalizeUrl(shortcut.url)));
     if (!candidates.length) {
       thumb.appendChild(letterNode(shortcut.title));
       return;
@@ -182,7 +202,7 @@
   function makeTile(section, shortcut) {
     const tile = document.createElement("a");
     tile.className = "tile";
-    tile.href = shortcut.url;
+    tile.href = normalizeUrl(shortcut.url);
     tile.draggable = true;
     tile.dataset.id = shortcut.id;
     tile.dataset.section = section.id;
