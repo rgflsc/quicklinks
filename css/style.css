@@ -157,11 +157,37 @@ main {
   border-bottom: 1px solid var(--divider);
 }
 
+.section-toggle {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.section-toggle:hover {
+  background: var(--tile-bg);
+}
+
+.section.collapsed .section-toggle {
+  transform: rotate(-90deg);
+}
+
 .section-title {
   margin: 0;
   font-size: 15px;
   font-weight: 600;
   color: var(--fg);
+  cursor: pointer;
+}
+
+.section.collapsed .grid {
+  display: none;
 }
 
 .section-count {

@@ -6,7 +6,7 @@ visual shortcuts.
 ## Features
 
 - **Custom new tab** — overrides `chrome://newtab` with sections of shortcut tiles.
-- **Sections** — create, rename, and delete sections; each holds up to 10 shortcuts.
+- **Sections** — create, rename, delete, and collapse/expand sections; each holds up to 10 shortcuts.
 - **Add / edit / delete** shortcuts, each with a name and URL.
 - **Favicons** automatically fetched per site, with a letter fallback.
 - **Drag to reorder** tiles.

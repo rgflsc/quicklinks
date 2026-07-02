@@ -185,14 +185,23 @@
   function makeSection(section) {
     const wrap = document.createElement("section");
     wrap.className = "section";
+    wrap.classList.toggle("collapsed", !!section.collapsed);
     wrap.dataset.id = section.id;
 
     const head = document.createElement("div");
     head.className = "section-head";
 
+    const toggle = document.createElement("button");
+    toggle.className = "section-toggle";
+    toggle.title = section.collapsed ? "Expand section" : "Collapse section";
+    toggle.setAttribute("aria-expanded", String(!section.collapsed));
+    toggle.textContent = "\u25be"; // ▾
+    toggle.addEventListener("click", () => toggleSection(section.id));
+
     const h2 = document.createElement("h2");
     h2.className = "section-title";
     h2.textContent = section.title;
+    h2.addEventListener("click", () => toggleSection(section.id));
 
     const count = document.createElement("span");
     count.className = "section-count";
@@ -204,7 +213,7 @@
     editBtn.textContent = "\u22ee";
     editBtn.addEventListener("click", () => openSectionDialog(section));
 
-    head.append(h2, count, editBtn);
+    head.append(toggle, h2, count, editBtn);
 
     const grid = document.createElement("div");
     grid.className = "grid";
@@ -213,6 +222,14 @@
 
     wrap.append(head, grid);
     return wrap;
+  }
+
+  async function toggleSection(id) {
+    const sec = findSection(id);
+    if (!sec) return;
+    sec.collapsed = !sec.collapsed;
+    await persist();
+    render();
   }
 
   function render() {

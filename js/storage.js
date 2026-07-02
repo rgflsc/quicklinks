@@ -47,6 +47,7 @@ function normalizeSection(sec, index) {
   return {
     id: sec && sec.id ? String(sec.id) : `sec_${index}_${Math.random().toString(36).slice(2, 7)}`,
     title: sec && typeof sec.title === "string" ? sec.title : "Shortcuts",
+    collapsed: !!(sec && sec.collapsed),
     shortcuts: shortcuts.slice(0, MAX_PER_SECTION).map(normalizeShortcut),
   };
 }
