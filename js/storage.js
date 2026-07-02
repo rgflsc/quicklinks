@@ -4,6 +4,8 @@
 
 const STORAGE_KEY = "quicklinks";
 
+const MAX_PER_SECTION = 10;
+
 const DEFAULT_SETTINGS = {
   bgColor: "#1a1a2e",
   bgImage: "",
@@ -13,12 +15,18 @@ const DEFAULT_SETTINGS = {
 };
 
 const DEFAULT_STATE = {
-  shortcuts: [
-    { id: "s1", title: "Google", url: "https://www.google.com" },
-    { id: "s2", title: "YouTube", url: "https://www.youtube.com" },
-    { id: "s3", title: "GitHub", url: "https://github.com" },
-    { id: "s4", title: "Gmail", url: "https://mail.google.com" },
-    { id: "s5", title: "Wikipedia", url: "https://www.wikipedia.org" },
+  sections: [
+    {
+      id: "sec1",
+      title: "Shortcuts",
+      shortcuts: [
+        { id: "s1", title: "Google", url: "https://www.google.com" },
+        { id: "s2", title: "YouTube", url: "https://www.youtube.com" },
+        { id: "s3", title: "GitHub", url: "https://github.com" },
+        { id: "s4", title: "Gmail", url: "https://mail.google.com" },
+        { id: "s5", title: "Wikipedia", url: "https://www.wikipedia.org" },
+      ],
+    },
   ],
   settings: { ...DEFAULT_SETTINGS },
 };
@@ -26,12 +34,36 @@ const DEFAULT_STATE = {
 const hasChromeStorage =
   typeof chrome !== "undefined" && chrome.storage && chrome.storage.sync;
 
+function normalizeShortcut(s) {
+  return {
+    id: s && s.id ? String(s.id) : `s_${Math.random().toString(36).slice(2, 9)}`,
+    title: s && typeof s.title === "string" ? s.title : "",
+    url: s && typeof s.url === "string" ? s.url : "",
+  };
+}
+
+function normalizeSection(sec, index) {
+  const shortcuts = Array.isArray(sec && sec.shortcuts) ? sec.shortcuts : [];
+  return {
+    id: sec && sec.id ? String(sec.id) : `sec_${index}_${Math.random().toString(36).slice(2, 7)}`,
+    title: sec && typeof sec.title === "string" ? sec.title : "Shortcuts",
+    shortcuts: shortcuts.slice(0, MAX_PER_SECTION).map(normalizeShortcut),
+  };
+}
+
 function normalize(state) {
   const safe = state && typeof state === "object" ? state : {};
+  let sections;
+  if (Array.isArray(safe.sections)) {
+    sections = safe.sections;
+  } else if (Array.isArray(safe.shortcuts)) {
+    // Migrate the old flat-shortcuts format into a single section.
+    sections = [{ id: "sec1", title: "Shortcuts", shortcuts: safe.shortcuts }];
+  } else {
+    sections = DEFAULT_STATE.sections;
+  }
   return {
-    shortcuts: Array.isArray(safe.shortcuts)
-      ? safe.shortcuts
-      : DEFAULT_STATE.shortcuts,
+    sections: sections.map(normalizeSection),
     settings: { ...DEFAULT_SETTINGS, ...(safe.settings || {}) },
   };
 }
@@ -71,5 +103,5 @@ const Storage = {
   },
 };
 
-const QL = { Storage, DEFAULT_SETTINGS, DEFAULT_STATE };
+const QL = { Storage, DEFAULT_SETTINGS, DEFAULT_STATE, MAX_PER_SECTION };
 if (typeof window !== "undefined") window.QL = QL;

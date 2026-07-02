@@ -27,8 +27,26 @@
   </header>
 
   <main>
-    <section id="grid" class="grid" aria-label="Shortcuts"></section>
+    <div id="sections"></div>
+    <button id="add-section-btn" class="add-section">+ Add section</button>
   </main>
+
+  <!-- Section add/edit dialog -->
+  <dialog id="section-dialog">
+    <form method="dialog" id="section-form">
+      <h2 id="section-dialog-title">Add section</h2>
+      <label>
+        Name
+        <input id="field-section-title" type="text" placeholder="Work" required maxlength="40" />
+      </label>
+      <div class="dialog-actions">
+        <button type="button" id="section-delete" class="btn btn-danger" hidden>Delete</button>
+        <span class="spacer"></span>
+        <button type="button" id="section-cancel" class="btn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </dialog>
 
   <!-- Shortcut add/edit dialog -->
   <dialog id="shortcut-dialog">

@@ -1,7 +1,9 @@
 (() => {
-  const { Storage } = window.QL;
+  const { Storage, MAX_PER_SECTION } = window.QL;
+  const MAX = MAX_PER_SECTION || 10;
 
-  const grid = document.getElementById("grid");
+  const sectionsEl = document.getElementById("sections");
+  const addSectionBtn = document.getElementById("add-section-btn");
   const searchForm = document.getElementById("search-form");
   const searchInput = document.getElementById("search-input");
   const engineIcon = document.getElementById("engine-icon");
@@ -19,6 +21,14 @@
     ecosia: { label: "Ecosia", url: "https://www.ecosia.org/search?q=", domain: "ecosia.org" },
     brave: { label: "Brave", url: "https://search.brave.com/search?q=", domain: "search.brave.com" },
   };
+
+  // Section dialog
+  const sectionDialog = document.getElementById("section-dialog");
+  const sectionForm = document.getElementById("section-form");
+  const sectionDialogTitle = document.getElementById("section-dialog-title");
+  const fieldSectionTitle = document.getElementById("field-section-title");
+  const sectionDelete = document.getElementById("section-delete");
+  const sectionCancel = document.getElementById("section-cancel");
 
   // Shortcut dialog
   const shortcutDialog = document.getElementById("shortcut-dialog");
@@ -41,12 +51,17 @@
   const settingsCancel = document.getElementById("settings-cancel");
   const settingsReset = document.getElementById("settings-reset");
 
-  let state = { shortcuts: [], settings: {} };
-  let editingId = null;
-  let dragId = null;
+  let state = { sections: [], settings: {} };
+  let editingSectionId = null; // section being edited (null = adding)
+  let scCtx = { sectionId: null, shortcutId: null }; // shortcut dialog context
+  let drag = { sectionId: null, shortcutId: null };
 
-  const uid = () =>
-    `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+  const uid = (p) =>
+    `${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+
+  function findSection(id) {
+    return state.sections.find((s) => s.id === id);
+  }
 
   function normalizeUrl(raw) {
     const value = raw.trim();
@@ -72,7 +87,7 @@
       ? `url("${s.bgImage}")`
       : "none";
     document.body.classList.toggle("no-titles", !s.showTitles);
-    grid.style.setProperty("--columns", String(s.columns || 6));
+    document.documentElement.style.setProperty("--columns", String(s.columns || 6));
     applyEngineIcon();
   }
 
@@ -97,12 +112,20 @@
     }
   }
 
-  function makeTile(shortcut) {
+  function letterNode(title) {
+    const span = document.createElement("span");
+    span.className = "letter";
+    span.textContent = (title || "?").trim().charAt(0) || "?";
+    return span;
+  }
+
+  function makeTile(section, shortcut) {
     const tile = document.createElement("a");
     tile.className = "tile";
     tile.href = shortcut.url;
     tile.draggable = true;
     tile.dataset.id = shortcut.id;
+    tile.dataset.section = section.id;
 
     const thumb = document.createElement("div");
     thumb.className = "tile-thumb";
@@ -127,7 +150,7 @@
     edit.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      openShortcutDialog(shortcut);
+      openShortcutDialog(section.id, shortcut);
     });
 
     const title = document.createElement("span");
@@ -139,14 +162,7 @@
     return tile;
   }
 
-  function letterNode(title) {
-    const span = document.createElement("span");
-    span.className = "letter";
-    span.textContent = (title || "?").trim().charAt(0) || "?";
-    return span;
-  }
-
-  function makeAddTile() {
+  function makeAddTile(section) {
     const tile = document.createElement("button");
     tile.className = "tile add";
     tile.title = "Add shortcut";
@@ -160,42 +176,80 @@
     title.className = "tile-title";
     title.textContent = "Add shortcut";
     tile.append(thumb, title);
-    tile.addEventListener("click", () => openShortcutDialog(null));
+    tile.addEventListener("click", () => openShortcutDialog(section.id, null));
     return tile;
   }
 
-  function render() {
-    grid.innerHTML = "";
-    state.shortcuts.forEach((s) => grid.appendChild(makeTile(s)));
-    grid.appendChild(makeAddTile());
+  function makeSection(section) {
+    const wrap = document.createElement("section");
+    wrap.className = "section";
+    wrap.dataset.id = section.id;
+
+    const head = document.createElement("div");
+    head.className = "section-head";
+
+    const h2 = document.createElement("h2");
+    h2.className = "section-title";
+    h2.textContent = section.title;
+
+    const count = document.createElement("span");
+    count.className = "section-count";
+    count.textContent = `${section.shortcuts.length}/${MAX}`;
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "section-edit";
+    editBtn.title = "Edit section";
+    editBtn.textContent = "\u22ee";
+    editBtn.addEventListener("click", () => openSectionDialog(section));
+
+    head.append(h2, count, editBtn);
+
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    section.shortcuts.forEach((s) => grid.appendChild(makeTile(section, s)));
+    if (section.shortcuts.length < MAX) grid.appendChild(makeAddTile(section));
+
+    wrap.append(head, grid);
+    return wrap;
   }
 
-  // Drag & drop reordering
+  function render() {
+    sectionsEl.innerHTML = "";
+    state.sections.forEach((sec) => sectionsEl.appendChild(makeSection(sec)));
+  }
+
+  // Drag & drop reordering (within the same section only)
   function addDragHandlers(tile) {
     tile.addEventListener("dragstart", (e) => {
-      dragId = tile.dataset.id;
+      drag = { sectionId: tile.dataset.section, shortcutId: tile.dataset.id };
       tile.classList.add("dragging");
       e.dataTransfer.effectAllowed = "move";
     });
     tile.addEventListener("dragend", () => {
-      dragId = null;
+      drag = { sectionId: null, shortcutId: null };
       tile.classList.remove("dragging");
       document
         .querySelectorAll(".drag-over")
         .forEach((el) => el.classList.remove("drag-over"));
     });
     tile.addEventListener("dragover", (e) => {
+      if (drag.sectionId !== tile.dataset.section) return;
       e.preventDefault();
-      if (dragId && dragId !== tile.dataset.id) tile.classList.add("drag-over");
+      if (drag.shortcutId && drag.shortcutId !== tile.dataset.id) {
+        tile.classList.add("drag-over");
+      }
     });
     tile.addEventListener("dragleave", () => tile.classList.remove("drag-over"));
     tile.addEventListener("drop", async (e) => {
       e.preventDefault();
       tile.classList.remove("drag-over");
+      if (drag.sectionId !== tile.dataset.section) return;
+      const section = findSection(tile.dataset.section);
+      if (!section) return;
       const targetId = tile.dataset.id;
-      if (!dragId || dragId === targetId) return;
-      const list = state.shortcuts;
-      const from = list.findIndex((s) => s.id === dragId);
+      if (!drag.shortcutId || drag.shortcutId === targetId) return;
+      const list = section.shortcuts;
+      const from = list.findIndex((s) => s.id === drag.shortcutId);
       const to = list.findIndex((s) => s.id === targetId);
       if (from === -1 || to === -1) return;
       const [moved] = list.splice(from, 1);
@@ -205,9 +259,48 @@
     });
   }
 
+  // Section dialog
+  function openSectionDialog(section) {
+    editingSectionId = section ? section.id : null;
+    sectionDialogTitle.textContent = section ? "Edit section" : "Add section";
+    fieldSectionTitle.value = section ? section.title : "";
+    sectionDelete.hidden = !section;
+    sectionDialog.showModal();
+    fieldSectionTitle.focus();
+  }
+
+  sectionForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const title = fieldSectionTitle.value.trim();
+    if (!title) return;
+    if (editingSectionId) {
+      const sec = findSection(editingSectionId);
+      if (sec) sec.title = title;
+    } else {
+      state.sections.push({ id: uid("sec"), title, shortcuts: [] });
+    }
+    await persist();
+    render();
+    sectionDialog.close();
+  });
+
+  sectionDelete.addEventListener("click", async () => {
+    if (!editingSectionId) return;
+    const sec = findSection(editingSectionId);
+    const label = sec ? sec.title : "this section";
+    if (!confirm(`Delete section "${label}" and all its shortcuts?`)) return;
+    state.sections = state.sections.filter((s) => s.id !== editingSectionId);
+    await persist();
+    render();
+    sectionDialog.close();
+  });
+
+  sectionCancel.addEventListener("click", () => sectionDialog.close());
+  addSectionBtn.addEventListener("click", () => openSectionDialog(null));
+
   // Shortcut dialog
-  function openShortcutDialog(shortcut) {
-    editingId = shortcut ? shortcut.id : null;
+  function openShortcutDialog(sectionId, shortcut) {
+    scCtx = { sectionId, shortcutId: shortcut ? shortcut.id : null };
     dialogTitle.textContent = shortcut ? "Edit shortcut" : "Add shortcut";
     fieldTitle.value = shortcut ? shortcut.title : "";
     fieldUrl.value = shortcut ? shortcut.url : "";
@@ -218,17 +311,23 @@
 
   shortcutForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const section = findSection(scCtx.sectionId);
+    if (!section) return;
     const title = fieldTitle.value.trim();
     const url = normalizeUrl(fieldUrl.value);
     if (!title || !url) return;
-    if (editingId) {
-      const item = state.shortcuts.find((s) => s.id === editingId);
+    if (scCtx.shortcutId) {
+      const item = section.shortcuts.find((s) => s.id === scCtx.shortcutId);
       if (item) {
         item.title = title;
         item.url = url;
       }
     } else {
-      state.shortcuts.push({ id: uid(), title, url });
+      if (section.shortcuts.length >= MAX) {
+        alert(`Each section can hold up to ${MAX} shortcuts.`);
+        return;
+      }
+      section.shortcuts.push({ id: uid("s"), title, url });
     }
     await persist();
     render();
@@ -236,8 +335,9 @@
   });
 
   dialogDelete.addEventListener("click", async () => {
-    if (!editingId) return;
-    state.shortcuts = state.shortcuts.filter((s) => s.id !== editingId);
+    const section = findSection(scCtx.sectionId);
+    if (!section || !scCtx.shortcutId) return;
+    section.shortcuts = section.shortcuts.filter((s) => s.id !== scCtx.shortcutId);
     await persist();
     render();
     shortcutDialog.close();
@@ -274,7 +374,7 @@
   });
 
   settingsReset.addEventListener("click", async () => {
-    if (!confirm("Reset all shortcuts and settings to defaults?")) return;
+    if (!confirm("Reset all sections, shortcuts and settings to defaults?")) return;
     state = await Storage.reset();
     applySettings();
     render();
