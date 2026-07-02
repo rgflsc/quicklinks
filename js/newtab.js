@@ -44,7 +44,6 @@
   const settingsDialog = document.getElementById("settings-dialog");
   const settingsForm = document.getElementById("settings-form");
   const fieldTheme = document.getElementById("field-theme");
-  const fieldBgImage = document.getElementById("field-bg-image");
   const fieldColumns = document.getElementById("field-columns");
   const fieldShowTitles = document.getElementById("field-show-titles");
   const fieldSearchEngine = document.getElementById("field-search-engine");
@@ -85,9 +84,6 @@
     const theme = s.theme === "day" ? "day" : "night";
     document.body.classList.toggle("theme-day", theme === "day");
     document.body.classList.toggle("theme-night", theme === "night");
-    document.body.style.backgroundImage = s.bgImage
-      ? `url("${s.bgImage}")`
-      : "none";
     document.body.classList.toggle("no-titles", !s.showTitles);
     document.documentElement.style.setProperty("--columns", String(s.columns || 6));
     applyEngineIcon();
@@ -368,7 +364,6 @@
   function openSettings() {
     const s = state.settings;
     fieldTheme.value = s.theme === "day" ? "day" : "night";
-    fieldBgImage.value = s.bgImage || "";
     fieldColumns.value = s.columns || 6;
     fieldShowTitles.checked = s.showTitles !== false;
     fieldSearchEngine.value = SEARCH_ENGINES[s.searchEngine] ? s.searchEngine : "default";
@@ -382,7 +377,6 @@
     e.preventDefault();
     state.settings = {
       theme: fieldTheme.value === "day" ? "day" : "night",
-      bgImage: fieldBgImage.value.trim(),
       columns: Math.min(10, Math.max(3, Number(fieldColumns.value) || 6)),
       showTitles: fieldShowTitles.checked,
       searchEngine: fieldSearchEngine.value,
