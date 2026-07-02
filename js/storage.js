@@ -41,13 +41,25 @@ function normalizeShortcut(s) {
   };
 }
 
+function normalizeSubsection(sub, index) {
+  const shortcuts = Array.isArray(sub && sub.shortcuts) ? sub.shortcuts : [];
+  return {
+    id: sub && sub.id ? String(sub.id) : `sub_${index}_${Math.random().toString(36).slice(2, 7)}`,
+    title: sub && typeof sub.title === "string" ? sub.title : "",
+    collapsed: !!(sub && sub.collapsed),
+    shortcuts: shortcuts.slice(0, MAX_PER_SECTION).map(normalizeShortcut),
+  };
+}
+
 function normalizeSection(sec, index) {
   const shortcuts = Array.isArray(sec && sec.shortcuts) ? sec.shortcuts : [];
+  const subsections = Array.isArray(sec && sec.subsections) ? sec.subsections : [];
   return {
     id: sec && sec.id ? String(sec.id) : `sec_${index}_${Math.random().toString(36).slice(2, 7)}`,
     title: sec && typeof sec.title === "string" ? sec.title : "Shortcuts",
     collapsed: !!(sec && sec.collapsed),
     shortcuts: shortcuts.slice(0, MAX_PER_SECTION).map(normalizeShortcut),
+    subsections: subsections.map(normalizeSubsection),
   };
 }
 

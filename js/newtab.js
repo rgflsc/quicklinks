@@ -56,15 +56,32 @@
   const settingsReset = document.getElementById("settings-reset");
 
   let state = { sections: [], settings: {} };
-  let editingSectionId = null; // section being edited (null = adding)
-  let scCtx = { sectionId: null, shortcutId: null }; // shortcut dialog context
-  let drag = { sectionId: null, shortcutId: null };
+  // Section dialog context: parentId null = top-level section, otherwise a
+  // subsection under parentId. id null = adding a new one.
+  let secCtx = { parentId: null, id: null };
+  // Shortcut dialog context. subsectionId null = the section's own shortcuts.
+  let scCtx = { sectionId: null, subsectionId: null, shortcutId: null };
+  let drag = { sectionId: null, subsectionId: null, shortcutId: null };
 
   const uid = (p) =>
     `${p}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 
   function findSection(id) {
     return state.sections.find((s) => s.id === id);
+  }
+
+  function findSubsection(section, subId) {
+    if (!section || !Array.isArray(section.subsections)) return null;
+    return section.subsections.find((s) => s.id === subId) || null;
+  }
+
+  // Returns the object that holds a shortcuts[] array for the given context:
+  // the section itself, or one of its subsections.
+  function findContainer(sectionId, subsectionId) {
+    const section = findSection(sectionId);
+    if (!section) return null;
+    if (!subsectionId) return section;
+    return findSubsection(section, subsectionId);
   }
 
   function normalizeUrl(raw) {
@@ -199,13 +216,14 @@
     return span;
   }
 
-  function makeTile(section, shortcut) {
+  function makeTile(shortcut, sectionId, subsectionId) {
     const tile = document.createElement("a");
     tile.className = "tile";
     tile.href = normalizeUrl(shortcut.url);
     tile.draggable = true;
     tile.dataset.id = shortcut.id;
-    tile.dataset.section = section.id;
+    tile.dataset.section = sectionId;
+    tile.dataset.sub = subsectionId || "";
 
     const thumb = document.createElement("div");
     thumb.className = "tile-thumb";
@@ -218,7 +236,7 @@
     edit.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      openShortcutDialog(section.id, shortcut);
+      openShortcutDialog(sectionId, subsectionId, shortcut);
     });
 
     const title = document.createElement("span");
@@ -230,7 +248,7 @@
     return tile;
   }
 
-  function makeAddTile(section) {
+  function makeAddTile(sectionId, subsectionId) {
     const tile = document.createElement("button");
     tile.className = "tile add";
     tile.title = tr("addShortcut");
@@ -244,8 +262,58 @@
     title.className = "tile-title";
     title.textContent = tr("addShortcut");
     tile.append(thumb, title);
-    tile.addEventListener("click", () => openShortcutDialog(section.id, null));
+    tile.addEventListener("click", () =>
+      openShortcutDialog(sectionId, subsectionId, null)
+    );
     return tile;
+  }
+
+  function makeGrid(container, sectionId, subsectionId) {
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    container.shortcuts.forEach((s) =>
+      grid.appendChild(makeTile(s, sectionId, subsectionId))
+    );
+    if (container.shortcuts.length < MAX) {
+      grid.appendChild(makeAddTile(sectionId, subsectionId));
+    }
+    return grid;
+  }
+
+  function makeSubsection(section, sub) {
+    const wrap = document.createElement("div");
+    wrap.className = "subsection";
+    wrap.classList.toggle("collapsed", !!sub.collapsed);
+    wrap.dataset.id = sub.id;
+
+    const head = document.createElement("div");
+    head.className = "subsection-head";
+
+    const toggle = document.createElement("button");
+    toggle.className = "section-toggle";
+    toggle.title = sub.collapsed ? tr("expandSection") : tr("collapseSection");
+    toggle.setAttribute("aria-expanded", String(!sub.collapsed));
+    toggle.textContent = "\u25be";
+    toggle.addEventListener("click", () => toggleSubsection(section.id, sub.id));
+
+    const h3 = document.createElement("h3");
+    h3.className = "subsection-title";
+    h3.textContent = sub.title;
+    h3.addEventListener("click", () => toggleSubsection(section.id, sub.id));
+
+    const count = document.createElement("span");
+    count.className = "section-count";
+    count.textContent = `${sub.shortcuts.length}/${MAX}`;
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "section-edit";
+    editBtn.title = tr("editSubsection");
+    editBtn.textContent = "\u22ee";
+    editBtn.addEventListener("click", () => openSectionDialog(section.id, sub));
+
+    head.append(toggle, h3, count, editBtn);
+    wrap.append(head, makeGrid(sub, section.id, sub.id));
+    return wrap;
   }
 
   function makeSection(section) {
@@ -277,16 +345,25 @@
     editBtn.className = "section-edit";
     editBtn.title = tr("editSection");
     editBtn.textContent = "\u22ee";
-    editBtn.addEventListener("click", () => openSectionDialog(section));
+    editBtn.addEventListener("click", () => openSectionDialog(null, section));
 
     head.append(toggle, h2, count, editBtn);
 
-    const grid = document.createElement("div");
-    grid.className = "grid";
-    section.shortcuts.forEach((s) => grid.appendChild(makeTile(section, s)));
-    if (section.shortcuts.length < MAX) grid.appendChild(makeAddTile(section));
+    const body = document.createElement("div");
+    body.className = "section-body";
+    body.appendChild(makeGrid(section, section.id, null));
 
-    wrap.append(head, grid);
+    (section.subsections || []).forEach((sub) =>
+      body.appendChild(makeSubsection(section, sub))
+    );
+
+    const addSub = document.createElement("button");
+    addSub.className = "add-subsection";
+    addSub.textContent = tr("addSubsectionBtn");
+    addSub.addEventListener("click", () => openSectionDialog(section.id, null));
+    body.appendChild(addSub);
+
+    wrap.append(head, body);
     return wrap;
   }
 
@@ -298,27 +375,46 @@
     render();
   }
 
+  async function toggleSubsection(sectionId, subId) {
+    const sub = findSubsection(findSection(sectionId), subId);
+    if (!sub) return;
+    sub.collapsed = !sub.collapsed;
+    await persist();
+    render();
+  }
+
   function render() {
     sectionsEl.innerHTML = "";
     state.sections.forEach((sec) => sectionsEl.appendChild(makeSection(sec)));
   }
 
-  // Drag & drop reordering (within the same section only)
+  // Drag & drop reordering (within the same section or subsection only)
+  function sameContainer(tile) {
+    return (
+      drag.sectionId === tile.dataset.section &&
+      (drag.subsectionId || "") === tile.dataset.sub
+    );
+  }
+
   function addDragHandlers(tile) {
     tile.addEventListener("dragstart", (e) => {
-      drag = { sectionId: tile.dataset.section, shortcutId: tile.dataset.id };
+      drag = {
+        sectionId: tile.dataset.section,
+        subsectionId: tile.dataset.sub || null,
+        shortcutId: tile.dataset.id,
+      };
       tile.classList.add("dragging");
       e.dataTransfer.effectAllowed = "move";
     });
     tile.addEventListener("dragend", () => {
-      drag = { sectionId: null, shortcutId: null };
+      drag = { sectionId: null, subsectionId: null, shortcutId: null };
       tile.classList.remove("dragging");
       document
         .querySelectorAll(".drag-over")
         .forEach((el) => el.classList.remove("drag-over"));
     });
     tile.addEventListener("dragover", (e) => {
-      if (drag.sectionId !== tile.dataset.section) return;
+      if (!sameContainer(tile)) return;
       e.preventDefault();
       if (drag.shortcutId && drag.shortcutId !== tile.dataset.id) {
         tile.classList.add("drag-over");
@@ -328,12 +424,12 @@
     tile.addEventListener("drop", async (e) => {
       e.preventDefault();
       tile.classList.remove("drag-over");
-      if (drag.sectionId !== tile.dataset.section) return;
-      const section = findSection(tile.dataset.section);
-      if (!section) return;
+      if (!sameContainer(tile)) return;
+      const container = findContainer(tile.dataset.section, tile.dataset.sub || null);
+      if (!container) return;
       const targetId = tile.dataset.id;
       if (!drag.shortcutId || drag.shortcutId === targetId) return;
-      const list = section.shortcuts;
+      const list = container.shortcuts;
       const from = list.findIndex((s) => s.id === drag.shortcutId);
       const to = list.findIndex((s) => s.id === targetId);
       if (from === -1 || to === -1) return;
@@ -344,12 +440,17 @@
     });
   }
 
-  // Section dialog
-  function openSectionDialog(section) {
-    editingSectionId = section ? section.id : null;
-    sectionDialogTitle.textContent = section ? tr("editSection") : tr("addSection");
-    fieldSectionTitle.value = section ? section.title : "";
-    sectionDelete.hidden = !section;
+  // Section dialog — shared by sections and subsections.
+  // parentId null = top-level section; otherwise a subsection under parentId.
+  // item is the section/subsection being edited, or null when adding.
+  function openSectionDialog(parentId, item) {
+    secCtx = { parentId: parentId || null, id: item ? item.id : null };
+    const isSub = !!parentId;
+    const addKey = isSub ? "addSubsection" : "addSection";
+    const editKey = isSub ? "editSubsection" : "editSection";
+    sectionDialogTitle.textContent = item ? tr(editKey) : tr(addKey);
+    fieldSectionTitle.value = item ? item.title : "";
+    sectionDelete.hidden = !item;
     sectionDialog.showModal();
     fieldSectionTitle.focus();
   }
@@ -358,11 +459,21 @@
     e.preventDefault();
     const title = fieldSectionTitle.value.trim();
     if (!title) return;
-    if (editingSectionId) {
-      const sec = findSection(editingSectionId);
+    if (secCtx.parentId) {
+      const parent = findSection(secCtx.parentId);
+      if (!parent) return;
+      if (!Array.isArray(parent.subsections)) parent.subsections = [];
+      if (secCtx.id) {
+        const sub = findSubsection(parent, secCtx.id);
+        if (sub) sub.title = title;
+      } else {
+        parent.subsections.push({ id: uid("sub"), title, collapsed: false, shortcuts: [] });
+      }
+    } else if (secCtx.id) {
+      const sec = findSection(secCtx.id);
       if (sec) sec.title = title;
     } else {
-      state.sections.push({ id: uid("sec"), title, shortcuts: [] });
+      state.sections.push({ id: uid("sec"), title, shortcuts: [], subsections: [] });
     }
     await persist();
     render();
@@ -370,22 +481,34 @@
   });
 
   sectionDelete.addEventListener("click", async () => {
-    if (!editingSectionId) return;
-    const sec = findSection(editingSectionId);
-    const label = sec ? sec.title : tr("thisSection");
-    if (!confirm(tr("confirmDeleteSection", { name: label }))) return;
-    state.sections = state.sections.filter((s) => s.id !== editingSectionId);
+    if (!secCtx.id) return;
+    if (secCtx.parentId) {
+      const parent = findSection(secCtx.parentId);
+      const sub = findSubsection(parent, secCtx.id);
+      const label = sub ? sub.title : tr("thisSubsection");
+      if (!confirm(tr("confirmDeleteSubsection", { name: label }))) return;
+      parent.subsections = parent.subsections.filter((s) => s.id !== secCtx.id);
+    } else {
+      const sec = findSection(secCtx.id);
+      const label = sec ? sec.title : tr("thisSection");
+      if (!confirm(tr("confirmDeleteSection", { name: label }))) return;
+      state.sections = state.sections.filter((s) => s.id !== secCtx.id);
+    }
     await persist();
     render();
     sectionDialog.close();
   });
 
   sectionCancel.addEventListener("click", () => sectionDialog.close());
-  addSectionBtn.addEventListener("click", () => openSectionDialog(null));
+  addSectionBtn.addEventListener("click", () => openSectionDialog(null, null));
 
   // Shortcut dialog
-  function openShortcutDialog(sectionId, shortcut) {
-    scCtx = { sectionId, shortcutId: shortcut ? shortcut.id : null };
+  function openShortcutDialog(sectionId, subsectionId, shortcut) {
+    scCtx = {
+      sectionId,
+      subsectionId: subsectionId || null,
+      shortcutId: shortcut ? shortcut.id : null,
+    };
     dialogTitle.textContent = shortcut ? tr("editShortcut") : tr("addShortcut");
     fieldTitle.value = shortcut ? shortcut.title : "";
     fieldUrl.value = shortcut ? shortcut.url : "";
@@ -397,25 +520,25 @@
 
   shortcutForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const section = findSection(scCtx.sectionId);
-    if (!section) return;
+    const container = findContainer(scCtx.sectionId, scCtx.subsectionId);
+    if (!container) return;
     const title = fieldTitle.value.trim();
     const url = normalizeUrl(fieldUrl.value);
     const icon = normalizeUrl(fieldIcon.value);
     if (!title || !url) return;
     if (scCtx.shortcutId) {
-      const item = section.shortcuts.find((s) => s.id === scCtx.shortcutId);
+      const item = container.shortcuts.find((s) => s.id === scCtx.shortcutId);
       if (item) {
         item.title = title;
         item.url = url;
         item.icon = icon;
       }
     } else {
-      if (section.shortcuts.length >= MAX) {
+      if (container.shortcuts.length >= MAX) {
         alert(tr("maxShortcuts", { max: MAX }));
         return;
       }
-      section.shortcuts.push({ id: uid("s"), title, url, icon });
+      container.shortcuts.push({ id: uid("s"), title, url, icon });
     }
     await persist();
     render();
@@ -423,9 +546,9 @@
   });
 
   dialogDelete.addEventListener("click", async () => {
-    const section = findSection(scCtx.sectionId);
-    if (!section || !scCtx.shortcutId) return;
-    section.shortcuts = section.shortcuts.filter((s) => s.id !== scCtx.shortcutId);
+    const container = findContainer(scCtx.sectionId, scCtx.subsectionId);
+    if (!container || !scCtx.shortcutId) return;
+    container.shortcuts = container.shortcuts.filter((s) => s.id !== scCtx.shortcutId);
     await persist();
     render();
     shortcutDialog.close();

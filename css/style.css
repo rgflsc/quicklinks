@@ -185,8 +185,56 @@ main {
   cursor: pointer;
 }
 
-.section.collapsed .grid {
+.section.collapsed .section-body {
   display: none;
+}
+
+.section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* Subsections */
+.subsection {
+  margin-left: 22px;
+}
+
+.subsection-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.subsection-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.subsection.collapsed .grid {
+  display: none;
+}
+
+.add-subsection {
+  align-self: flex-start;
+  margin-left: 22px;
+  padding: 6px 14px;
+  border: 1px dashed var(--dashed);
+  border-radius: 18px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.add-subsection:hover {
+  background: var(--tile-bg);
+  color: var(--fg);
 }
 
 .section-count {
