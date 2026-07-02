@@ -280,6 +280,18 @@
     return grid;
   }
 
+  function makeHeadAddBtn(container, sectionId, subsectionId) {
+    const btn = document.createElement("button");
+    btn.className = "section-add";
+    btn.title = tr("addShortcut");
+    btn.textContent = "+";
+    btn.disabled = container.shortcuts.length >= MAX;
+    btn.addEventListener("click", () =>
+      openShortcutDialog(sectionId, subsectionId, null)
+    );
+    return btn;
+  }
+
   function makeSubsection(section, sub) {
     const wrap = document.createElement("div");
     wrap.className = "subsection";
@@ -311,7 +323,13 @@
     editBtn.textContent = "\u22ee";
     editBtn.addEventListener("click", () => openSectionDialog(section.id, sub));
 
-    head.append(toggle, h3, count, editBtn);
+    head.append(
+      toggle,
+      h3,
+      count,
+      makeHeadAddBtn(sub, section.id, sub.id),
+      editBtn
+    );
     wrap.append(head, makeGrid(sub, section.id, sub.id));
     return wrap;
   }
@@ -347,7 +365,13 @@
     editBtn.textContent = "\u22ee";
     editBtn.addEventListener("click", () => openSectionDialog(null, section));
 
-    head.append(toggle, h2, count, editBtn);
+    head.append(
+      toggle,
+      h2,
+      count,
+      makeHeadAddBtn(section, section.id, null),
+      editBtn
+    );
 
     const body = document.createElement("div");
     body.className = "section-body";
