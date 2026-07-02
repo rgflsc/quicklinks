@@ -43,7 +43,7 @@
   const settingsBtn = document.getElementById("settings-btn");
   const settingsDialog = document.getElementById("settings-dialog");
   const settingsForm = document.getElementById("settings-form");
-  const fieldBgColor = document.getElementById("field-bg-color");
+  const fieldTheme = document.getElementById("field-theme");
   const fieldBgImage = document.getElementById("field-bg-image");
   const fieldColumns = document.getElementById("field-columns");
   const fieldShowTitles = document.getElementById("field-show-titles");
@@ -82,7 +82,9 @@
 
   function applySettings() {
     const s = state.settings;
-    document.body.style.backgroundColor = s.bgColor || "#1a1a2e";
+    const theme = s.theme === "day" ? "day" : "night";
+    document.body.classList.toggle("theme-day", theme === "day");
+    document.body.classList.toggle("theme-night", theme === "night");
     document.body.style.backgroundImage = s.bgImage
       ? `url("${s.bgImage}")`
       : "none";
@@ -348,7 +350,7 @@
   // Settings dialog
   function openSettings() {
     const s = state.settings;
-    fieldBgColor.value = s.bgColor || "#1a1a2e";
+    fieldTheme.value = s.theme === "day" ? "day" : "night";
     fieldBgImage.value = s.bgImage || "";
     fieldColumns.value = s.columns || 6;
     fieldShowTitles.checked = s.showTitles !== false;
@@ -362,7 +364,7 @@
   settingsForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     state.settings = {
-      bgColor: fieldBgColor.value,
+      theme: fieldTheme.value === "day" ? "day" : "night",
       bgImage: fieldBgImage.value.trim(),
       columns: Math.min(10, Math.max(3, Number(fieldColumns.value) || 6)),
       showTitles: fieldShowTitles.checked,

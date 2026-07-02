@@ -7,7 +7,7 @@ const STORAGE_KEY = "quicklinks";
 const MAX_PER_SECTION = 10;
 
 const DEFAULT_SETTINGS = {
-  bgColor: "#1a1a2e",
+  theme: "night",
   bgImage: "",
   columns: 6,
   showTitles: true,
