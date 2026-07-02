@@ -4,6 +4,21 @@
   const grid = document.getElementById("grid");
   const searchForm = document.getElementById("search-form");
   const searchInput = document.getElementById("search-input");
+  const engineIcon = document.getElementById("engine-icon");
+
+  // Search engines the user can pick. `default` uses the browser's configured
+  // engine via chrome.search and shows a generic magnifier icon.
+  const MAGNIFIER_SVG =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 5 1.5-1.5-5-5Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14Z"/></svg>';
+  const SEARCH_ENGINES = {
+    default: { label: "Browser default", url: null, domain: null },
+    google: { label: "Google", url: "https://www.google.com/search?q=", domain: "google.com" },
+    bing: { label: "Bing", url: "https://www.bing.com/search?q=", domain: "bing.com" },
+    duckduckgo: { label: "DuckDuckGo", url: "https://duckduckgo.com/?q=", domain: "duckduckgo.com" },
+    yahoo: { label: "Yahoo", url: "https://search.yahoo.com/search?p=", domain: "search.yahoo.com" },
+    ecosia: { label: "Ecosia", url: "https://www.ecosia.org/search?q=", domain: "ecosia.org" },
+    brave: { label: "Brave", url: "https://search.brave.com/search?q=", domain: "search.brave.com" },
+  };
 
   // Shortcut dialog
   const shortcutDialog = document.getElementById("shortcut-dialog");
@@ -22,6 +37,7 @@
   const fieldBgImage = document.getElementById("field-bg-image");
   const fieldColumns = document.getElementById("field-columns");
   const fieldShowTitles = document.getElementById("field-show-titles");
+  const fieldSearchEngine = document.getElementById("field-search-engine");
   const settingsCancel = document.getElementById("settings-cancel");
   const settingsReset = document.getElementById("settings-reset");
 
@@ -57,6 +73,28 @@
       : "none";
     document.body.classList.toggle("no-titles", !s.showTitles);
     grid.style.setProperty("--columns", String(s.columns || 6));
+    applyEngineIcon();
+  }
+
+  function currentEngine() {
+    return SEARCH_ENGINES[state.settings.searchEngine] || SEARCH_ENGINES.default;
+  }
+
+  function applyEngineIcon() {
+    const engine = currentEngine();
+    engineIcon.title = `Search engine: ${engine.label}`;
+    if (engine.domain) {
+      engineIcon.innerHTML = "";
+      const img = document.createElement("img");
+      img.src = `https://www.google.com/s2/favicons?domain=${engine.domain}&sz=64`;
+      img.alt = "";
+      img.addEventListener("error", () => {
+        engineIcon.innerHTML = MAGNIFIER_SVG;
+      });
+      engineIcon.appendChild(img);
+    } else {
+      engineIcon.innerHTML = MAGNIFIER_SVG;
+    }
   }
 
   function makeTile(shortcut) {
@@ -214,6 +252,7 @@
     fieldBgImage.value = s.bgImage || "";
     fieldColumns.value = s.columns || 6;
     fieldShowTitles.checked = s.showTitles !== false;
+    fieldSearchEngine.value = SEARCH_ENGINES[s.searchEngine] ? s.searchEngine : "default";
     settingsDialog.showModal();
   }
 
@@ -227,6 +266,7 @@
       bgImage: fieldBgImage.value.trim(),
       columns: Math.min(10, Math.max(3, Number(fieldColumns.value) || 6)),
       showTitles: fieldShowTitles.checked,
+      searchEngine: fieldSearchEngine.value,
     };
     await persist();
     applySettings();
@@ -241,9 +281,9 @@
     settingsDialog.close();
   });
 
-  // Search: treat input as URL if it looks like one, otherwise search using the
-  // browser's configured default search engine (chrome.search), falling back to
-  // Google when that API is unavailable (e.g. opened outside the extension).
+  // Search: treat input as URL if it looks like one, otherwise search with the
+  // engine chosen in settings. "Browser default" uses chrome.search (the
+  // browser's configured engine); a specific engine navigates to its search URL.
   const hasSearchApi =
     typeof chrome !== "undefined" && chrome.search && chrome.search.query;
 
@@ -255,6 +295,11 @@
       /^https?:\/\//i.test(q) || /^[\w.-]+\.[a-z]{2,}(\/|$)/i.test(q);
     if (looksLikeUrl) {
       window.location.href = normalizeUrl(q);
+      return;
+    }
+    const engine = currentEngine();
+    if (engine.url) {
+      window.location.href = engine.url + encodeURIComponent(q);
       return;
     }
     if (hasSearchApi) {

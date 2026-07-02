@@ -9,12 +9,15 @@
 <body>
   <header class="topbar">
     <form id="search-form" class="search" autocomplete="off">
-      <input
-        id="search-input"
-        type="text"
-        placeholder="Search the web or enter an address"
-        aria-label="Search"
-      />
+      <div class="search-box">
+        <span id="engine-icon" class="engine-icon" title="Search engine" aria-hidden="true"></span>
+        <input
+          id="search-input"
+          type="text"
+          placeholder="Search the web or enter an address"
+          aria-label="Search"
+        />
+      </div>
     </form>
     <button id="settings-btn" class="icon-btn" title="Settings" aria-label="Settings">
       <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
@@ -59,6 +62,18 @@
       <label>
         Background image URL (optional)
         <input id="field-bg-image" type="text" placeholder="https://..." />
+      </label>
+      <label>
+        Search engine
+        <select id="field-search-engine">
+          <option value="default">Browser default</option>
+          <option value="google">Google</option>
+          <option value="bing">Bing</option>
+          <option value="duckduckgo">DuckDuckGo</option>
+          <option value="yahoo">Yahoo</option>
+          <option value="ecosia">Ecosia</option>
+          <option value="brave">Brave</option>
+        </select>
       </label>
       <label>
         Columns

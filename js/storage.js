@@ -9,6 +9,7 @@ const DEFAULT_SETTINGS = {
   bgImage: "",
   columns: 6,
   showTitles: true,
+  searchEngine: "default",
 };
 
 const DEFAULT_STATE = {

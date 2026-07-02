@@ -9,7 +9,8 @@ visual shortcuts.
 - **Add / edit / delete** shortcuts, each with a name and URL.
 - **Favicons** automatically fetched per site, with a letter fallback.
 - **Drag to reorder** tiles.
-- **Search bar** — types that look like URLs open directly; anything else runs a Google search.
+- **Search bar** — types that look like URLs open directly; anything else runs a search. The chosen engine's icon is shown inside the bar so you know where you're searching.
+- **Search engine picker** — choose Browser default (uses `chrome.search`) or Google/Bing/DuckDuckGo/Yahoo/Ecosia/Brave.
 - **Customization** — background color or image, number of columns, and toggling titles.
 - **Synced storage** — shortcuts and settings persist via `chrome.storage.sync`
   (falls back to `localStorage` when opened outside the extension context).
