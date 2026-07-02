@@ -12,6 +12,7 @@ visual shortcuts.
 - **Drag to reorder** tiles.
 - **Search bar** — types that look like URLs open directly; anything else runs a search. The chosen engine's icon is shown inside the bar so you know where you're searching.
 - **Search engine picker** — choose Browser default (uses `chrome.search`) or Google/Bing/DuckDuckGo/Yahoo/Ecosia/Brave.
+- **Multilingual** — interface available in English, Portuguese (pt-BR), and Spanish, selectable in Settings.
 - **Customization** — Day/Night theme (adjusts background and font colors) and toggling titles.
 - **Synced storage** — shortcuts and settings persist via `chrome.storage.sync`
   (falls back to `localStorage` when opened outside the extension context).

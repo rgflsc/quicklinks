@@ -1,6 +1,10 @@
 (() => {
   const { Storage, MAX_PER_SECTION } = window.QL;
+  const I18N = window.QLI18N;
   const MAX = MAX_PER_SECTION || 10;
+
+  let lang = "en";
+  const tr = (key, vars) => I18N.t(lang, key, vars);
 
   const sectionsEl = document.getElementById("sections");
   const addSectionBtn = document.getElementById("add-section-btn");
@@ -46,6 +50,7 @@
   const fieldTheme = document.getElementById("field-theme");
   const fieldShowTitles = document.getElementById("field-show-titles");
   const fieldSearchEngine = document.getElementById("field-search-engine");
+  const fieldLanguage = document.getElementById("field-language");
   const settingsCancel = document.getElementById("settings-cancel");
   const settingsReset = document.getElementById("settings-reset");
 
@@ -78,12 +83,18 @@
     }
   }
 
+  function applyLanguage() {
+    lang = I18N.normLang(state.settings.language || I18N.pickDefault());
+    I18N.applyStatic(lang);
+  }
+
   function applySettings() {
     const s = state.settings;
     const theme = s.theme === "day" ? "day" : "night";
     document.body.classList.toggle("theme-day", theme === "day");
     document.body.classList.toggle("theme-night", theme === "night");
     document.body.classList.toggle("no-titles", !s.showTitles);
+    applyLanguage();
     applyEngineIcon();
   }
 
@@ -93,7 +104,8 @@
 
   function applyEngineIcon() {
     const engine = currentEngine();
-    engineIcon.title = `Search engine: ${engine.label}`;
+    const label = engine.domain ? engine.label : tr("browserDefault");
+    engineIcon.title = tr("searchEngineTitle", { label });
     if (engine.domain) {
       engineIcon.innerHTML = "";
       const img = document.createElement("img");
@@ -141,7 +153,7 @@
 
     const edit = document.createElement("button");
     edit.className = "tile-edit";
-    edit.title = "Edit";
+    edit.title = tr("edit");
     edit.textContent = "\u22ee";
     edit.addEventListener("click", (e) => {
       e.preventDefault();
@@ -161,7 +173,7 @@
   function makeAddTile(section) {
     const tile = document.createElement("button");
     tile.className = "tile add";
-    tile.title = "Add shortcut";
+    tile.title = tr("addShortcut");
     const thumb = document.createElement("div");
     thumb.className = "tile-thumb";
     const plus = document.createElement("span");
@@ -170,7 +182,7 @@
     thumb.appendChild(plus);
     const title = document.createElement("span");
     title.className = "tile-title";
-    title.textContent = "Add shortcut";
+    title.textContent = tr("addShortcut");
     tile.append(thumb, title);
     tile.addEventListener("click", () => openShortcutDialog(section.id, null));
     return tile;
@@ -187,7 +199,7 @@
 
     const toggle = document.createElement("button");
     toggle.className = "section-toggle";
-    toggle.title = section.collapsed ? "Expand section" : "Collapse section";
+    toggle.title = section.collapsed ? tr("expandSection") : tr("collapseSection");
     toggle.setAttribute("aria-expanded", String(!section.collapsed));
     toggle.textContent = "\u25be"; // ▾
     toggle.addEventListener("click", () => toggleSection(section.id));
@@ -203,7 +215,7 @@
 
     const editBtn = document.createElement("button");
     editBtn.className = "section-edit";
-    editBtn.title = "Edit section";
+    editBtn.title = tr("editSection");
     editBtn.textContent = "\u22ee";
     editBtn.addEventListener("click", () => openSectionDialog(section));
 
@@ -275,7 +287,7 @@
   // Section dialog
   function openSectionDialog(section) {
     editingSectionId = section ? section.id : null;
-    sectionDialogTitle.textContent = section ? "Edit section" : "Add section";
+    sectionDialogTitle.textContent = section ? tr("editSection") : tr("addSection");
     fieldSectionTitle.value = section ? section.title : "";
     sectionDelete.hidden = !section;
     sectionDialog.showModal();
@@ -300,8 +312,8 @@
   sectionDelete.addEventListener("click", async () => {
     if (!editingSectionId) return;
     const sec = findSection(editingSectionId);
-    const label = sec ? sec.title : "this section";
-    if (!confirm(`Delete section "${label}" and all its shortcuts?`)) return;
+    const label = sec ? sec.title : tr("thisSection");
+    if (!confirm(tr("confirmDeleteSection", { name: label }))) return;
     state.sections = state.sections.filter((s) => s.id !== editingSectionId);
     await persist();
     render();
@@ -314,7 +326,7 @@
   // Shortcut dialog
   function openShortcutDialog(sectionId, shortcut) {
     scCtx = { sectionId, shortcutId: shortcut ? shortcut.id : null };
-    dialogTitle.textContent = shortcut ? "Edit shortcut" : "Add shortcut";
+    dialogTitle.textContent = shortcut ? tr("editShortcut") : tr("addShortcut");
     fieldTitle.value = shortcut ? shortcut.title : "";
     fieldUrl.value = shortcut ? shortcut.url : "";
     dialogDelete.hidden = !shortcut;
@@ -337,7 +349,7 @@
       }
     } else {
       if (section.shortcuts.length >= MAX) {
-        alert(`Each section can hold up to ${MAX} shortcuts.`);
+        alert(tr("maxShortcuts", { max: MAX }));
         return;
       }
       section.shortcuts.push({ id: uid("s"), title, url });
@@ -361,6 +373,7 @@
   // Settings dialog
   function openSettings() {
     const s = state.settings;
+    fieldLanguage.value = lang;
     fieldTheme.value = s.theme === "day" ? "day" : "night";
     fieldShowTitles.checked = s.showTitles !== false;
     fieldSearchEngine.value = SEARCH_ENGINES[s.searchEngine] ? s.searchEngine : "default";
@@ -373,17 +386,19 @@
   settingsForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     state.settings = {
+      language: I18N.normLang(fieldLanguage.value),
       theme: fieldTheme.value === "day" ? "day" : "night",
       showTitles: fieldShowTitles.checked,
       searchEngine: fieldSearchEngine.value,
     };
     await persist();
     applySettings();
+    render();
     settingsDialog.close();
   });
 
   settingsReset.addEventListener("click", async () => {
-    if (!confirm("Reset all sections, shortcuts and settings to defaults?")) return;
+    if (!confirm(tr("confirmReset"))) return;
     state = await Storage.reset();
     applySettings();
     render();

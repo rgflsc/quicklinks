@@ -15,11 +15,12 @@
           id="search-input"
           type="text"
           placeholder="Search the web or enter an address"
+          data-i18n-placeholder="searchPlaceholder"
           aria-label="Search"
         />
       </div>
     </form>
-    <button id="settings-btn" class="icon-btn" title="Settings" aria-label="Settings">
+    <button id="settings-btn" class="icon-btn" title="Settings" data-i18n-title="settings" aria-label="Settings" data-i18n-aria-label="settings">
       <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
         <path fill="currentColor" d="M12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Zm7.4-3.5a7.6 7.6 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7.3 7.3 0 0 0-1.7-1l-.4-2.5H9.2l-.4 2.5a7.3 7.3 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1c.5.4 1.1.7 1.7 1l.4 2.5h5.6l.4-2.5c.6-.3 1.2-.6 1.7-1l2.4 1 2-3.4-2-1.6c.1-.3.1-.7.1-1Z"/>
       </svg>
@@ -28,7 +29,7 @@
 
   <main>
     <div id="sections"></div>
-    <button id="add-section-btn" class="add-section">+ Add section</button>
+    <button id="add-section-btn" class="add-section" data-i18n="addSectionBtn">+ Add section</button>
   </main>
 
   <!-- Section add/edit dialog -->
@@ -36,14 +37,14 @@
     <form method="dialog" id="section-form">
       <h2 id="section-dialog-title">Add section</h2>
       <label>
-        Name
-        <input id="field-section-title" type="text" placeholder="Work" required maxlength="40" />
+        <span data-i18n="name">Name</span>
+        <input id="field-section-title" type="text" placeholder="Work" data-i18n-placeholder="sectionNamePlaceholder" required maxlength="40" />
       </label>
       <div class="dialog-actions">
-        <button type="button" id="section-delete" class="btn btn-danger" hidden>Delete</button>
+        <button type="button" id="section-delete" class="btn btn-danger" data-i18n="delete" hidden>Delete</button>
         <span class="spacer"></span>
-        <button type="button" id="section-cancel" class="btn">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="button" id="section-cancel" class="btn" data-i18n="cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
       </div>
     </form>
   </dialog>
@@ -53,18 +54,18 @@
     <form method="dialog" id="shortcut-form">
       <h2 id="dialog-title">Add shortcut</h2>
       <label>
-        Name
-        <input id="field-title" type="text" placeholder="Example" required maxlength="60" />
+        <span data-i18n="name">Name</span>
+        <input id="field-title" type="text" placeholder="Example" data-i18n-placeholder="shortcutNamePlaceholder" required maxlength="60" />
       </label>
       <label>
-        URL
+        <span data-i18n="url">URL</span>
         <input id="field-url" type="text" placeholder="https://example.com" required />
       </label>
       <div class="dialog-actions">
-        <button type="button" id="dialog-delete" class="btn btn-danger" hidden>Delete</button>
+        <button type="button" id="dialog-delete" class="btn btn-danger" data-i18n="delete" hidden>Delete</button>
         <span class="spacer"></span>
-        <button type="button" id="dialog-cancel" class="btn">Cancel</button>
-        <button type="submit" id="dialog-save" class="btn btn-primary">Save</button>
+        <button type="button" id="dialog-cancel" class="btn" data-i18n="cancel">Cancel</button>
+        <button type="submit" id="dialog-save" class="btn btn-primary" data-i18n="save">Save</button>
       </div>
     </form>
   </dialog>
@@ -72,18 +73,26 @@
   <!-- Settings dialog -->
   <dialog id="settings-dialog">
     <form method="dialog" id="settings-form">
-      <h2>Settings</h2>
+      <h2 data-i18n="settings">Settings</h2>
       <label>
-        Theme
-        <select id="field-theme">
-          <option value="night">Night</option>
-          <option value="day">Day</option>
+        <span data-i18n="language">Language</span>
+        <select id="field-language">
+          <option value="en">English</option>
+          <option value="pt-br">Português (Brasil)</option>
+          <option value="es">Español</option>
         </select>
       </label>
       <label>
-        Search engine
+        <span data-i18n="theme">Theme</span>
+        <select id="field-theme">
+          <option value="night" data-i18n="night">Night</option>
+          <option value="day" data-i18n="day">Day</option>
+        </select>
+      </label>
+      <label>
+        <span data-i18n="searchEngine">Search engine</span>
         <select id="field-search-engine">
-          <option value="default">Browser default</option>
+          <option value="default" data-i18n="browserDefault">Browser default</option>
           <option value="google">Google</option>
           <option value="bing">Bing</option>
           <option value="duckduckgo">DuckDuckGo</option>
@@ -94,17 +103,18 @@
       </label>
       <label class="checkbox">
         <input id="field-show-titles" type="checkbox" checked />
-        Show titles under tiles
+        <span data-i18n="showTitles">Show titles under tiles</span>
       </label>
       <div class="dialog-actions">
-        <button type="button" id="settings-reset" class="btn btn-danger">Reset all</button>
+        <button type="button" id="settings-reset" class="btn btn-danger" data-i18n="resetAll">Reset all</button>
         <span class="spacer"></span>
-        <button type="button" id="settings-cancel" class="btn">Close</button>
-        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="button" id="settings-cancel" class="btn" data-i18n="close">Close</button>
+        <button type="submit" class="btn btn-primary" data-i18n="save">Save</button>
       </div>
     </form>
   </dialog>
 
+  <script src="js/i18n.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/newtab.js"></script>
 </body>
