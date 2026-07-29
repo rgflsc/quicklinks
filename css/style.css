@@ -1,7 +1,7 @@
 :root {
   --tile-size: 56px;
-  --tile-gap: 11px;
-  --radius: 10px;
+  --tile-gap: 22px;
+  --radius: 14px;
 }
 
 /* Night theme (default) */
@@ -317,7 +317,7 @@ main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
   text-decoration: none;
   color: var(--fg);
   cursor: pointer;
@@ -354,19 +354,21 @@ main {
 }
 
 .tile-thumb img {
-  width: 28px;
-  height: 28px;
+  width: calc(var(--tile-size) * 0.8);
+  height: calc(var(--tile-size) * 0.8);
+  object-fit: contain;
 }
 
 .tile-thumb .letter {
-  font-size: 24px;
+  font-size: calc(var(--tile-size) * 0.6);
   font-weight: 600;
   text-transform: uppercase;
 }
 
 .tile-title {
-  font-size: 11px;
-  max-width: 100%;
+  font-size: 13px;
+  /* Titles may spill into the gap (never into the neighbour tile). */
+  max-width: calc(var(--tile-size) + var(--tile-gap));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
