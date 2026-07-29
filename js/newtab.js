@@ -262,6 +262,28 @@
     return grid;
   }
 
+  const CHEVRONS_DOWN =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 5 12 11 18 5"/><polyline points="6 12 12 18 18 12"/></svg>';
+  const CHEVRONS_UP =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 11 12 5 18 11"/><polyline points="6 18 12 12 18 18"/></svg>';
+
+  // Expands or collapses every subsection of a section at once.
+  function makeToggleAllBtn(section) {
+    const anyExpanded = section.subsections.some((s) => !s.collapsed);
+    const btn = document.createElement("button");
+    btn.className = "section-toggle-all";
+    btn.title = anyExpanded ? tr("collapseAll") : tr("expandAll");
+    btn.innerHTML = anyExpanded ? CHEVRONS_UP : CHEVRONS_DOWN;
+    btn.addEventListener("click", async () => {
+      section.subsections.forEach((s) => {
+        s.collapsed = anyExpanded;
+      });
+      await persist();
+      render();
+    });
+    return btn;
+  }
+
   function makeHeadAddBtn(container, sectionId, subsectionId) {
     const btn = document.createElement("button");
     btn.className = "section-add";
@@ -347,13 +369,11 @@
     editBtn.textContent = "\u22ee";
     editBtn.addEventListener("click", () => openSectionDialog(null, section));
 
-    head.append(
-      toggle,
-      h2,
-      count,
-      makeHeadAddBtn(section, section.id, null),
-      editBtn
-    );
+    head.append(toggle, h2, count);
+    if ((section.subsections || []).length) {
+      head.appendChild(makeToggleAllBtn(section));
+    }
+    head.append(makeHeadAddBtn(section, section.id, null), editBtn);
 
     const body = document.createElement("div");
     body.className = "section-body";
