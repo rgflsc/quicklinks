@@ -131,32 +131,61 @@
     }
   }
 
-  // Ordered list of icon sources to try for a shortcut. Local/intranet hosts
-  // aren't reachable by Google's favicon service (it would return a generic
-  // globe), so we read their own /favicon.ico directly and rely on the
-  // browser's favicon store for non-standard icon paths.
+  // Ordered list of icon sources to try for a shortcut. Google's favicon
+  // service can't reach local/intranet hosts, so for those we read the site's
+  // own /favicon.ico directly.
   function iconCandidates(url) {
     try {
-      const u = new URL(url);
-      const { origin, hostname } = u;
-      const api = faviconApiUrl(url);
-      if (isLocalHost(hostname)) {
-        return [`${origin}/favicon.ico`, `${origin}/favicon.png`, api].filter(Boolean);
-      }
+      const { origin, hostname } = new URL(url);
+      const own = [`${origin}/favicon.ico`, `${origin}/favicon.png`];
+      if (isLocalHost(hostname)) return own;
       return [
         `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`,
-        `${origin}/favicon.ico`,
-        api,
-      ].filter(Boolean);
+        ...own,
+      ];
     } catch {
       return [];
     }
   }
 
-  function attachIcon(thumb, shortcut) {
+  async function hashOf(url) {
+    const bytes = new Uint8Array(await (await fetch(url)).arrayBuffer());
+    let h = 2166136261;
+    for (const b of bytes) {
+      h = Math.imul(h ^ b, 16777619);
+    }
+    return `${bytes.length}:${h >>> 0}`;
+  }
+
+  // Hash of the placeholder the favicon store returns for unknown pages, so a
+  // placeholder is never mistaken for a real icon.
+  let unknownIconHash;
+
+  // The favicon store answers with the real icon of any page already visited,
+  // which is the only way to get icons of intranet sites (unreachable by
+  // Google's service) or of sites whose icon lives at a non-standard path.
+  async function browserStoreIcon(url) {
+    const api = faviconApiUrl(url);
+    if (!api) return null;
+    try {
+      if (unknownIconHash === undefined) {
+        unknownIconHash = await hashOf(faviconApiUrl("https://unknown.invalid/"));
+      }
+      return (await hashOf(api)) === unknownIconHash ? null : api;
+    } catch {
+      return null;
+    }
+  }
+
+  async function attachIcon(thumb, shortcut) {
+    const url = normalizeUrl(shortcut.url);
     const candidates = [];
     if (shortcut.icon) candidates.push(shortcut.icon);
-    candidates.push(...iconCandidates(normalizeUrl(shortcut.url)));
+    else {
+      const stored = await browserStoreIcon(url);
+      if (stored) candidates.push(stored);
+    }
+    candidates.push(...iconCandidates(url));
     if (!candidates.length) {
       thumb.appendChild(letterNode(shortcut.title));
       return;
