@@ -179,7 +179,7 @@ main {
 
 .section-title {
   margin: 0;
-  font-size: 15px;
+  font-size: 19px;
   font-weight: 600;
   color: var(--fg);
   cursor: pointer;
@@ -209,7 +209,7 @@ main {
 
 .subsection-title {
   margin: 0;
-  font-size: 13px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--muted);
   cursor: pointer;
@@ -238,7 +238,7 @@ main {
 }
 
 .section-count {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
 }
 
@@ -366,7 +366,7 @@ main {
 }
 
 .tile-title {
-  font-size: 13px;
+  font-size: 16px;
   /* Titles may spill into the gap (never into the neighbour tile). */
   max-width: calc(var(--tile-size) + var(--tile-gap));
   overflow: hidden;
