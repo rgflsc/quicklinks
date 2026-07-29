@@ -1,7 +1,7 @@
 :root {
-  --tile-size: 112px;
-  --tile-gap: 22px;
-  --radius: 14px;
+  --tile-size: 56px;
+  --tile-gap: 11px;
+  --radius: 10px;
 }
 
 /* Night theme (default) */
@@ -317,7 +317,7 @@ main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   text-decoration: none;
   color: var(--fg);
   cursor: pointer;
@@ -354,18 +354,18 @@ main {
 }
 
 .tile-thumb img {
-  width: 48px;
-  height: 48px;
+  width: 28px;
+  height: 28px;
 }
 
 .tile-thumb .letter {
-  font-size: 42px;
+  font-size: 24px;
   font-weight: 600;
   text-transform: uppercase;
 }
 
 .tile-title {
-  font-size: 13px;
+  font-size: 11px;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -380,10 +380,11 @@ body.no-titles .tile-title {
 
 .tile-edit {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 26px;
-  height: 26px;
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  font-size: 12px;
   border-radius: 50%;
   border: none;
   background: var(--overlay);
