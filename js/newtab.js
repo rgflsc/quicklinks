@@ -56,6 +56,9 @@
   const fieldLanguage = document.getElementById("field-language");
   const settingsCancel = document.getElementById("settings-cancel");
   const settingsReset = document.getElementById("settings-reset");
+  const settingsExport = document.getElementById("settings-export");
+  const settingsImport = document.getElementById("settings-import");
+  const importFile = document.getElementById("import-file");
 
   let state = { sections: [], settings: {} };
   // Section dialog context: parentId null = top-level section, otherwise a
@@ -631,6 +634,45 @@
   settingsReset.addEventListener("click", async () => {
     if (!confirm(tr("confirmReset"))) return;
     state = await Storage.reset();
+    applySettings();
+    render();
+    settingsDialog.close();
+  });
+
+  // Backup: export the whole configuration (sections, shortcuts and settings)
+  // as a JSON file, and restore it later on any machine.
+  settingsExport.addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `quicklinks-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  settingsImport.addEventListener("click", () => importFile.click());
+
+  importFile.addEventListener("change", async () => {
+    const file = importFile.files && importFile.files[0];
+    importFile.value = "";
+    if (!file) return;
+    let parsed;
+    try {
+      parsed = JSON.parse(await file.text());
+    } catch {
+      alert(tr("importInvalid"));
+      return;
+    }
+    if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.sections)) {
+      alert(tr("importInvalid"));
+      return;
+    }
+    if (!confirm(tr("confirmImport"))) return;
+    await Storage.save(parsed);
+    state = await Storage.load();
     applySettings();
     render();
     settingsDialog.close();

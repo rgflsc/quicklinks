@@ -502,6 +502,23 @@ dialog input[type="color"] {
   cursor: pointer;
 }
 
+.settings-io {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 4px;
+  padding-top: 16px;
+  border-top: 1px solid #e8eaed;
+  font-size: 13px;
+  color: #5f6368;
+}
+
+.settings-io-buttons {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
 .dialog-actions {
   display: flex;
   align-items: center;

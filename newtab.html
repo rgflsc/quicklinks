@@ -113,6 +113,14 @@
         <input id="field-show-titles" type="checkbox" checked />
         <span data-i18n="showTitles">Show titles under tiles</span>
       </label>
+      <div class="settings-io">
+        <span data-i18n="backup">Backup</span>
+        <div class="settings-io-buttons">
+          <button type="button" id="settings-export" class="btn" data-i18n="exportConfig">Export</button>
+          <button type="button" id="settings-import" class="btn" data-i18n="importConfig">Import</button>
+          <input id="import-file" type="file" accept="application/json,.json" hidden />
+        </div>
+      </div>
       <div class="dialog-actions">
         <button type="button" id="settings-reset" class="btn btn-danger" data-i18n="resetAll">Reset all</button>
         <span class="spacer"></span>
