@@ -140,7 +140,7 @@
       const own = [`${origin}/favicon.ico`, `${origin}/favicon.png`];
       if (isLocalHost(hostname)) return own;
       return [
-        `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`,
+        `https://www.google.com/s2/favicons?domain=${hostname}&sz=128`,
         ...own,
       ];
     } catch {
